@@ -7,7 +7,8 @@ import {
   type WindowId,
   type Row0Indexed,
 } from "./nvim/window.ts";
-import type { Profile } from "./options.ts";
+import type { Profile, SidebarPositions } from "./options.ts";
+import { relative } from "node:path";
 export const WIDTH = 100;
 
 /** This will mostly manage the window toggle
@@ -71,7 +72,7 @@ export class Sidebar {
   /** returns buffers when they are visible
    */
   async toggle(
-    sidebarPosition: "left" | "right",
+    sidebarPosition: SidebarPositions,
   ): Promise<
     { displayBuffer: NvimBuffer; inputBuffer: NvimBuffer } | undefined
   > {
@@ -83,7 +84,7 @@ export class Sidebar {
     }
   }
 
-  private async show(sidebarPosition: "left" | "right"): Promise<{
+  private async show(sidebarPosition: SidebarPositions): Promise<{
     displayBuffer: NvimBuffer;
     inputBuffer: NvimBuffer;
   }> {
@@ -108,16 +109,25 @@ export class Sidebar {
       await displayBuffer.setOption("swapfile", false);
       await displayBuffer.setDisplayKeymaps();
     }
-    const displayWindowId = (await this.nvim.call("nvim_open_win", [
-      displayBuffer.id,
-      false,
-      {
-        win: -1, // global split
-        split: sidebarPosition,
-        width: WIDTH,
-        height: displayHeight,
-      },
-    ])) as WindowId;
+
+    let displayWindowId: WindowId;
+   
+    if (sidebarPosition == "tab") {
+      await this.nvim.call('nvim_command', ["tabnew"]);
+      displayWindowId = await this.nvim.call("nvim_get_current_win", []) as unknown as WindowId;
+      await this.nvim.call("nvim_win_set_buf", [displayWindowId, displayBuffer.id]);
+    } else {
+      displayWindowId = (await this.nvim.call("nvim_open_win", [
+        displayBuffer.id,
+        false,
+        {
+          win: -1, // global split
+          split: sidebarPosition,
+          width: WIDTH,
+          height: displayHeight,
+        },
+      ])) as WindowId;
+    }
     const displayWindow = new NvimWindow(displayWindowId, this.nvim);
 
     let inputBuffer: NvimBuffer;

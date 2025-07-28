@@ -93,10 +93,12 @@ export type EditPredictionOptions = {
   profile?: EditPredictionProfile;
 };
 
+export type SidebarPositions = "left" | "right" | "below" | "above" | "tab"; 
+
 export type MagentaOptions = {
   profiles: Profile[];
   activeProfile: string;
-  sidebarPosition: "left" | "right";
+  sidebarPosition: SidebarPositions;
   commandAllowlist: CommandAllowlist;
   autoContext: string[];
   maxConcurrentSubagents: number;
@@ -510,12 +512,12 @@ function parseMCPServers(
 function parseSidebarPosition(
   input: unknown,
   logger?: { warn: (msg: string) => void },
-): "left" | "right" | undefined {
-  if (input === "right" || input === "left") {
-    return input;
+): SidebarPositions | undefined {
+  if (input === "right" || input === "left" || input == "above" || input == "below" || input == "tab") {
+    return input as SidebarPositions;
   } else if (input !== undefined) {
     logger?.warn(
-      `Invalid sidebarPosition: ${JSON.stringify(input)}, must be "left" or "right"`,
+      `Invalid sidebarPosition: ${JSON.stringify(input)}, must be "left", "right", "above", "below" or "tab"`,
     );
   }
   return undefined;
